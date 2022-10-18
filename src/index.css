@@ -1,0 +1,41 @@
+.tile {
+  height: 50px;
+  width: 50px;
+  line-height: 50px;
+  text-align: center;
+  display: inline-block;
+  vertical-align: bottom;
+  border: 1px solid black;
+  box-sizing: border-box;
+  font-size: 20px;
+  font-weight: bolder;
+  user-select: none;
+}
+.mine {
+  color: black;
+}
+.mines-1 {
+  color: blue;
+}
+.mines-2 {
+  color: green;
+}
+.mines-3 {
+  color: red;
+}
+.mines-4 {
+  color: purple;
+}
+
+.unseen {
+  color: transparent;
+  background-color: lightblue;
+}
+
+.unseen:hover {
+  border: 2px solid yellow;
+}
+
+.unseen.flagged {
+  background-color: blue;
+}
