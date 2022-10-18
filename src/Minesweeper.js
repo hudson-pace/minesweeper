@@ -1,5 +1,11 @@
 import { useState } from "react";
 
+const GameState = {
+  Lost: 'Lost',
+  Won: 'Won',
+  InProgress: 'InProgress',
+};
+
 // courtesy of Fisher-Yates
 const shuffleArray = (arr) => {
   let m = arr.length, t, i;
@@ -145,7 +151,22 @@ const clearMinesAroundTile = (index, grid, width, height) => {
   });
 }
 
-const handleClick = (e, index, grid, setGrid, width, height, firstClick, setFirstClick) => {
+const checkForWin = (grid, setGameState) => {
+  let win = true;
+  for (const tile of grid) {
+    if (tile.value === -1 && tile.exposed) {
+      setGameState(GameState.Lost);
+    } else if (tile.value !== -1 && !tile.exposed) {
+      win = false;
+    }
+  }
+  if (win) {
+    setGameState(GameState.Won);
+  }
+}
+
+const handleClick = (e, index, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState) => {
+  if (gameState !== GameState.InProgress) return;
   const newGrid = grid.slice();
   if (firstClick) {
     setFirstClick(false);
@@ -160,11 +181,12 @@ const handleClick = (e, index, grid, setGrid, width, height, firstClick, setFirs
     showNeighbors(index, newGrid, width, height);
   }
   setGrid(newGrid);
+  checkForWin(newGrid, setGameState);
 }
-const handleRightClick = (e, index, grid, setGrid, flagCount, setFlagCount) => {
+const handleRightClick = (e, index, grid, setGrid, flagCount, setFlagCount, gameState, setGameState) => {
   e.preventDefault();
   
-  if ((flagCount > 0 || grid[index].flagged) && !grid[index].exposed) {
+  if (gameState === GameState.InProgress && (flagCount > 0 || grid[index].flagged) && !grid[index].exposed) {
     const newGrid = grid.slice();
     const tile = {...grid[index]};
     const newCount = flagCount + (tile.flagged ? 1 : -1);
@@ -184,6 +206,7 @@ export default function Minesweeper() {
   });
   const [firstClick, setFirstClick] = useState(true);
   const [flagCount, setFlagCount] = useState(mineCount);
+  const [gameState, setGameState] = useState(GameState.InProgress);
 
   const squares = grid.map((tile) => {
     return <Tile
@@ -192,8 +215,8 @@ export default function Minesweeper() {
       flagged={tile.flagged}
       index={tile.index}
       key={tile.index}
-      onClick={(e, index) => handleClick(e, index, grid, setGrid, width, height, firstClick, setFirstClick)}
-      onContextMenu={(e, index) => handleRightClick(e, index, grid, setGrid, flagCount, setFlagCount)}
+      onClick={(e, index) => handleClick(e, index, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState)}
+      onContextMenu={(e, index) => handleRightClick(e, index, grid, setGrid, flagCount, setFlagCount, gameState, setGameState)}
     />
   });
   const rows = [];
@@ -208,6 +231,9 @@ export default function Minesweeper() {
       </div>
       <div>
         Flags: {flagCount}
+      </div>
+      <div>
+        Game State: {gameState}
       </div>
     </div>
   )
