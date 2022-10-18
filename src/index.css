@@ -1,7 +1,7 @@
 .tile {
-  height: 50px;
-  width: 50px;
-  line-height: 50px;
+  height: 30px;
+  width: 30px;
+  line-height: 30px;
   text-align: center;
   display: inline-block;
   vertical-align: bottom;
@@ -25,6 +25,9 @@
 }
 .mines-4 {
   color: purple;
+}
+.mines-5 {
+  color: yellow;
 }
 
 .unseen {
