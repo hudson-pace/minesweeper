@@ -12,6 +12,24 @@ const shuffleArray = (arr) => {
   return arr;
 }
 
+// Given a grid and an index, return a list of valid indices within the given radius.
+// **includes tile at the given index**
+const getIndexListAroundTile = (index, width, height, radius) => {
+  const effectiveRadius = radius - 1;
+  const {x, y} = getCoordsFromIndex(index, width);
+  const coordList = [];
+  for (let i = 0 - effectiveRadius; i <= 0 + effectiveRadius; i++) {
+    for (let j = 0 - effectiveRadius; j <= 0 + effectiveRadius; j++) {
+      const x2 = x + i;
+      const y2 = y + j;
+      if (coordsAreValid(x2, y2, width, height)) {
+        coordList.push(getIndexFromCoords(x2, y2, width, height));
+      }
+    }
+  }
+  return coordList;
+}
+
 const getIndexFromCoords = (x, y, width, height) => {
   return coordsAreValid(x, y, width, height) ? (y * width) + x : -1;
 }
@@ -22,20 +40,16 @@ const getCoordsFromIndex = (index, width) => {
   }
 }
 
-const countMines = (index, width, height, arr) => {
+const countMines = (index, width, height, grid) => {
   let mineCount = 0;
-  if (arr[index].value === -1) {
-    return -1;
+  if (grid[index].value === -1) {
+    return 1;
   }
-  const {x, y} = getCoordsFromIndex(index, width);
-  for (let i = -1; i < 2; i++) {
-    for (let j = -1; j < 2; j++) {
-      const index = getIndexFromCoords(x + i, y + j, width, height);
-      if (index !== -1 && arr[index].value === -1) {
-        mineCount++;
-      }
+  getIndexListAroundTile(index, width, height, 2).forEach((i) => {
+    if (i !== -1 && grid[i].value === -1) {
+      mineCount++;
     }
-  }
+  });
   return mineCount;
 }
 
@@ -56,20 +70,15 @@ const updateMineCounts = (grid, width, height) => {
 
 const generateGrid = (width, height, mineCount) => {
   let grid = new Array(width * height).fill(0);
-  grid = grid.map((value) => { return { value }})
+  grid = grid.map((value) => { return { value }});
   for (let i = 0; i < Math.min(width * height, mineCount); i++) {
     grid[i].value = -1;
   }
   shuffleArray(grid);
-  for (let i = 0; i < grid.length; i++) {
-    if (grid[i].value !== -1) {
-      grid[i].value = countMines(i, width, height, grid);
-    }
-  }
 
   grid = grid.map((tile, index) => {
     return {
-      value: tile.value,
+      ...tile,
       flagged: false,
       exposed: false,
       index
@@ -80,103 +89,70 @@ const generateGrid = (width, height, mineCount) => {
 
 const countFlagsAroundIndex = (index, grid, width, height) => {
   let flagCount = 0;
-  const {x, y} = getCoordsFromIndex(index, width);
-  for (let i = -1; i < 2; i++) { 
-    for (let j = -1; j < 2; j++) {
-      const x2 = x + i;
-      const y2 = y + j;
-      if (coordsAreValid(x2, y2, width, height)) {
-        const index2 = getIndexFromCoords(x2, y2, width, height);
-        if (grid[index2].flagged) {
-          flagCount++;
-        }
-      }
+
+  getIndexListAroundTile(index, width, height, 2).forEach((i) => {
+    if (grid[i].flagged) {
+      flagCount++;
     }
-  }
+  });
+
   return flagCount;
 }
 
 const showTile = (index, grid, width, height) => {
   const tile = {...grid[index]};
-  tile.flagged = false;
   tile.exposed = true;
   grid[index] = tile;
   if (tile.value === 0) {
-    const {x, y} = getCoordsFromIndex(index, width);
-    for (let i = -1; i < 2; i++) {
-      for (let j = -1; j < 2; j++) {
-        const x2 = x + i;
-        const y2 = y + j;
-        if (coordsAreValid(x2, y2, width, height)) {
-          const index2 = getIndexFromCoords(x2, y2, width, height)
-          if (!grid[index2].exposed) {
-            showTile(index2, grid, width, height);
-          }
-        }
+    getIndexListAroundTile(index, width, height, 2).forEach((i) => {
+      if (!grid[i].exposed && !grid[i].flagged) {
+        showTile(i, grid, width, height);
       }
-    }
+    });
   }
 }
 
 const showNeighbors = (index, grid, width, height) => {
-  const {x, y} = getCoordsFromIndex(index, width);
-  for (let i = -1; i < 2; i++) {
-    for (let j = -1; j < 2; j++) {
-      const x2 = x + i;
-      const y2 = y + j;
-      if (coordsAreValid(x2, y2, width, height)) {
-        const index2 = getIndexFromCoords(x2, y2, width, height);
-        if (!grid[index2].exposed && !grid[index2].flagged) {
-          showTile(index2, grid, width, height);
-        }
-      }
+  getIndexListAroundTile(index, width, height, 2).forEach((i) => {
+    if (!grid[i].exposed && !grid[i].flagged) {
+      showTile(i, grid, width, height);
     }
-  }
+  });
 }
 
-const findValidEmptyTile = (x, y, width, height, grid) => {
+const getRandomTile = (width, height) => {
+  return Math.floor(Math.random() * width * height);
+}
+
+// returns an empty tile that is not within the provided list of indices.
+const findValidEmptyTile = (width, height, grid, protectedIndices = []) => {
   let candidateIndex;
-  let valid;
-  let dx;
-  let dy;
-  const length = width * height;
   do {
-    candidateIndex = Math.floor(Math.random() * length);
-    const {x: x2, y: y2} = getCoordsFromIndex(candidateIndex, width);
-    valid = coordsAreValid(x2, y2, width, height);
-    dx = Math.abs(x2 - x);
-    dy = Math.abs(y2 - y);
-  } while (!valid || dx < 2 || dy < 2 || grid[candidateIndex].value === -1);
+    candidateIndex = getRandomTile(width, height);
+  } while (grid[candidateIndex].value === -1 || protectedIndices.includes(candidateIndex));
   return candidateIndex;
 }
 
 const clearMinesAroundTile = (index, grid, width, height) => {
-  const {x, y} = getCoordsFromIndex(index, width);
-  for (let i = -1; i < 2; i++) {
-    for (let j = -1; j < 2; j++) {
-      const x2 = x + i;
-      const y2 = y + j;
-      if (coordsAreValid(x2, y2, width, height)) {
-        const index2 = getIndexFromCoords(x2, y2, width, height);
-        if (grid[index2].value === -1) {
-          const newIndex = findValidEmptyTile(x, y, width, height, grid);
-          const temp = grid[index2];
-          grid[index2] = {...grid[newIndex], index: index2};
-          grid[newIndex] = {...temp, index: newIndex};
-        }
-      }
+  const indices = getIndexListAroundTile(index, width, height, 2);
+  indices.forEach((i) => {
+    if (grid[i].value === -1) {
+      const newIndex = findValidEmptyTile(width, height, grid, indices);
+      const temp = grid[i];
+      grid[i] = {...grid[newIndex], index: i};
+      grid[newIndex] = {...temp, index: newIndex};
     }
-  }
-  updateMineCounts(grid, width, height);
+  });
 }
 
 const handleClick = (e, index, grid, setGrid, width, height, firstClick, setFirstClick) => {
   const newGrid = grid.slice();
   if (firstClick) {
     setFirstClick(false);
-    if (newGrid[index].value !== 0) {
+    if (countMines(index, width, height, newGrid) > 0) {
       clearMinesAroundTile(index, newGrid, width, height);
     }
+    updateMineCounts(newGrid, width, height);
   }
   if (!newGrid[index].exposed && !newGrid[index].flagged) {
     showTile(index, newGrid, width, height);
