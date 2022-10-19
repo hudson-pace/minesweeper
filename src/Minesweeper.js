@@ -250,7 +250,172 @@ const startAutoplay = (grid, width, height, e, setGrid, firstClick, setFirstClic
       }
     });
     completeTurn(targets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
-  }, 1000);
+  }, 300);
+}
+
+const autoplayMk2 = (grid, width, height, e, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
+  return setInterval(() => {
+    console.log('making a move (automatically!)');
+    const targets = new Set();
+    const flagTargets = new Set();
+    grid.forEach((tile) => {
+      if (tile.exposed && tile.value === countFlagsAroundIndex(tile.index, grid, width, height)) {
+        getIndexListAroundTile(tile.index, width, height, 2).forEach((index) => {
+          if (!grid[index].exposed && !grid[index].flagged) {
+            targets.add(index);
+          }
+        });
+      }
+      if (tile.exposed) {
+        if (tile.value > countFlagsAroundIndex(tile.index, grid, width, height)) {
+          const candidates = getIndexListAroundTile(tile.index, width, height, 2).filter((t) => !grid[t].flagged && !grid[t].exposed);
+          if (candidates.length === tile.value - countFlagsAroundIndex(tile.index, grid, width, height)) {
+            flagTargets.add(...candidates);
+          }
+        }
+      }
+    });
+    completeTurn(targets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
+  }, 300);
+}
+
+const generateBinaryStrings = (length, oneCount) => {
+  const total = Math.pow(2, length);
+  const strings = [];
+  for (let i = 0; i < total; i++) {
+    const str = i.toString(2);
+    if (str.split('1').length === oneCount + 1) {
+      const pad = length - str.length;
+      strings.push('0'.repeat(pad).concat(str));
+    }
+  }
+  return strings;
+}
+
+const checksOut = (combination, affectedParties, grid, width, height) => {
+  for (let i = 0; i < affectedParties.length; i++) {
+    const party = affectedParties[i];
+    console.log(combination.filter((c) => getIndexListAroundTile(party, width, height, 2).includes(c)).length)
+    if (!(grid[party].value >= countFlagsAroundIndex(party, grid, width, height) + combination.filter((c) => getIndexListAroundTile(party, width, height, 2).includes(c)).length)) {
+      return false;
+    }
+  };
+  return true;
+}
+
+const autoplayMk3 = (grid, width, height, e, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
+  return setInterval(() => {
+    console.log('making a move (automatically!)');
+    const targets = new Set();
+    const flagTargets = new Set();
+    grid.forEach((tile) => {
+      if (tile.exposed && tile.value === countFlagsAroundIndex(tile.index, grid, width, height)) {
+        getIndexListAroundTile(tile.index, width, height, 2).forEach((index) => {
+          if (!grid[index].exposed && !grid[index].flagged) {
+            targets.add(index);
+          }
+        });
+      }
+
+      if (tile.exposed) {
+        const flags = countFlagsAroundIndex(tile.index, grid, width, height)
+        if (tile.value > flags) {
+          const candidates = getIndexListAroundTile(tile.index, width, height, 2).filter((t) => !grid[t].flagged && !grid[t].exposed);
+          const affectedParties = new Set();
+          candidates.forEach((t) => {
+            const f = getIndexListAroundTile(t, width, height, 2);
+            const ff = f.filter((i) => grid[i].exposed)
+            affectedParties.add(...ff);
+          });
+          let good = false;
+          let choice;
+          const hey = generateBinaryStrings(candidates.length, tile.value - flags);
+          for (let i = 0; i < hey.length; i++) {
+            const s = hey[i];
+            const combination = [];
+            for (let i = 0; i < s.length; i++) {
+              if (s[i] === '1') {
+                combination.push(candidates[i]);
+              }
+            }
+            if (checksOut(combination, Array.from(affectedParties), grid, width, height)) {
+              if (!good) {
+                good = true;
+                choice = combination;
+              } else {
+                good = false;
+                break;
+              }
+            }
+          }
+          if (good) {
+            flagTargets.add(...choice);
+          }
+        }
+      }
+    });
+    completeTurn(targets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
+  }, 100);
+}
+
+const autoplayMk4 = (grid, width, height, e, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
+  return setInterval(() => {
+    console.log('making a move (automatically!)');
+    const targets = new Set();
+    const flagTargets = new Set();
+    grid.forEach((tile) => {
+      if (tile.exposed && tile.value === countFlagsAroundIndex(tile.index, grid, width, height)) {
+        getIndexListAroundTile(tile.index, width, height, 2).forEach((index) => {
+          if (!grid[index].exposed && !grid[index].flagged) {
+            targets.add(index);
+          }
+        });
+      }
+
+      if (tile.exposed) {
+        const flags = countFlagsAroundIndex(tile.index, grid, width, height)
+        if (tile.value > flags) {
+          const candidates = getIndexListAroundTile(tile.index, width, height, 2).filter((t) => !grid[t].flagged && !grid[t].exposed);
+          const affectedParties = new Set();
+          candidates.forEach((t) => {
+            const f = getIndexListAroundTile(t, width, height, 2);
+            const ff = f.filter((i) => grid[i].exposed)
+            affectedParties.add(...ff);
+          });
+          const validCombos = [];
+          const hey = generateBinaryStrings(candidates.length, tile.value - flags);
+          for (let i = 0; i < hey.length; i++) {
+            const s = hey[i];
+            const combination = [];
+            for (let i = 0; i < s.length; i++) {
+              if (s[i] === '1') {
+                combination.push(candidates[i]);
+              }
+            }
+            if (checksOut(combination, Array.from(affectedParties), grid, width, height)) {
+              validCombos.push(s);
+            }
+          }
+          if (validCombos.length > 0) {
+            console.log(validCombos);
+            for (let i = 0; i < candidates.length; i++) {
+              let valid = true;
+              for (let j = 0; j < validCombos.length; j++) {
+                if (validCombos[j][i] === '0') {
+                  valid = false;
+                }
+              }
+              if (valid) {
+                console.log(i)
+                flagTargets.add(candidates[i]);
+              }
+            }
+          }
+        }
+      }
+    });
+    completeTurn(targets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
+  }, 100);
 }
 
 export default function Minesweeper() {
@@ -265,7 +430,7 @@ export default function Minesweeper() {
   const [gameState, setGameState] = useState(GameState.InProgress);
 
   useEffect(() => {
-    const autoplayInterval = startAutoplay(grid, width, height, { buttons: 0 }, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
+    const autoplayInterval = autoplayMk4(grid, width, height, { buttons: 0 }, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
     return () => {
       clearInterval(autoplayInterval);
     }
@@ -278,7 +443,7 @@ export default function Minesweeper() {
       flagged={tile.flagged}
       index={tile.index}
       key={tile.index}
-      onClick={(e, index) => handleClick(e, index, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState)}
+      onClick={(e, index) => handleClick(e, index, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount)}
       onContextMenu={(e, index) => handleRightClick(e, index, grid, setGrid, flagCount, setFlagCount, gameState, setGameState, width, height, firstClick, setFirstClick)}
     />
   });
