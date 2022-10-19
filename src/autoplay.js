@@ -1,7 +1,10 @@
 import {
     countFlagsAroundIndex,
     countUnexposedTilesAroundIndex,
+    getCoordsFromIndex,
+    getFrontier,
     getIndexListAroundTile,
+    getUnexposedUnflaggedTilesAroundIndex,
 } from './gridUtils';
 
 /*
@@ -9,14 +12,21 @@ import {
     return lists of indices to flag and to click on.
 */
 export default function autoplay(grid, level) {
-    if (level === 1) {
-        return autoplayMk1(grid);
-    } else if (level === 3) {
-        return autoplayMk3(grid);
-    } else if (level === 4) {
-        return autoplayMk4(grid);
-    } else {
-        return grid;
+    switch (level) {
+        case 1:
+            return autoplayMk1(grid);
+        case 3:
+            return autoplayMk3(grid);
+        case 4:
+            return autoplayMk4(grid);
+        case 5:
+            return autoplayMk5(grid);
+        default:
+            return {
+                clickTargets: [],
+                flagTargets: [],
+            };
+
     }
 }
 
@@ -146,6 +156,96 @@ const autoplayMk4 = (grid) => {
                     }
                 }
             }
+        }
+    });
+    return {
+        clickTargets,
+        flagTargets,
+    }
+}
+
+// Accepts an array of arrays. Returns common elements.
+const getCommonElements = (arrays) => {
+    let common = arrays[0];
+    for (let i = 1; i < arrays.length; i++) {
+        common = common.filter((el) => arrays[i].includes(el));
+    }
+    return common;
+}
+
+const getSubsets = (arr, arrays) => {
+    return arrays.filter((a) => a.tiles.every((el) => arr.includes(el)));
+}
+
+const autoplayMk5 = (grid) => {
+    const clickTargets = getClickTargets(grid);
+    const flagTargets = new Set();
+
+    const requirements = getFrontier(grid).map((index) => {
+        return {
+            index,
+            tiles: getUnexposedUnflaggedTilesAroundIndex(index, grid),
+            count: grid.data[index].value - countFlagsAroundIndex(index, grid),
+        }
+    });
+
+    requirements.forEach((req) => {
+        if (req.count === req.tiles.length) {
+            flagTargets.add(...req.tiles);
+        } else {
+            const subsets = getSubsets(req.tiles, requirements);
+            let frontier = [...subsets]
+            while (frontier.length > 0) {
+                const oldFrontier = [...frontier];
+                const newFrontier = [];
+                oldFrontier.forEach((s) => {
+                    const complement = [...oldFrontier, ...subsets].find((s2) => getCommonElements([s.tiles, s2.tiles]).length === 0);
+                    if (complement) {
+                        const newSubset = {
+                            tiles: [...s.tiles, ...complement.tiles],
+                            count: s.count + complement.count
+                        };
+                        subsets.push(newSubset);
+                        newFrontier.push(newSubset);
+                    }
+                });
+                frontier = newFrontier;
+            }
+            const relevantSubsets = subsets.filter((s) => s.count === req.count);
+            relevantSubsets.forEach((s) => {
+                const what = req.tiles.filter((t) => !s.tiles.includes(t));
+                if (what.length > 0) {
+                    clickTargets.add(...what);
+                }
+            });
+        }
+    });
+
+    requirements.forEach((req) => {
+        const relevantReqs = requirements.filter((r) => getCommonElements([req.tiles, r.tiles]).length > 0);
+        const combinationStrings = generateBinaryStrings(req.tiles.length, req.count);
+        const combinations = [];
+        combinationStrings.forEach((s) => {
+            const combination = [];
+            for (let i = 0; i < s.length; i++) {
+                if (s.charAt(i) === '1') {
+                    combination.push(req.tiles[i]);
+                }
+            }
+            combinations.push(combination);
+        });
+
+        const validCombinations = combinations.filter((c) => {
+            for (let i = 0; i < relevantReqs.length; i++) {
+                if (getCommonElements([c, relevantReqs[i].tiles]).length > relevantReqs[i].count) {
+                    return false;
+                }
+            }
+            return true;
+        });
+        const commonElements = getCommonElements(validCombinations);
+        if (commonElements.length > 0) {
+            flagTargets.add(...commonElements);
         }
     });
     return {

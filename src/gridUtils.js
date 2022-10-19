@@ -98,6 +98,15 @@ const countMines = (index, grid) => {
     return mineCount;
 }
 
+// returns a list of indices which are exposed, and whose value is greater than their surrounding flags
+const getFrontier = (grid) => {
+    return grid.data.filter((tile) => tile.exposed && tile.value > countFlagsAroundIndex(tile.index, grid)).map((tile) => tile.index);
+}
+
+const getUnexposedUnflaggedTilesAroundIndex = (index, grid) => {
+    return getIndexListAroundTile(index, grid, 2).filter((index) => !grid.data[index].exposed && !grid.data[index].flagged);
+}
+
 export {
     countFlagsAroundIndex,
     getIndexListAroundTile,
@@ -108,4 +117,6 @@ export {
     generateGrid,
     shuffleArray,
     countMines,
+    getFrontier,
+    getUnexposedUnflaggedTilesAroundIndex,
 }

@@ -146,9 +146,11 @@ export default function Minesweeper(props) {
 
   useEffect(() => {
     const autoplayInterval = setTimeout(() => {
-      const { clickTargets, flagTargets } = autoplay(grid, 4);
-      if (clickTargets.size > 0 || flagTargets.size > 0) {
-        completeTurn(clickTargets, flagTargets, { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+      if (gameState === GameState.InProgress) {
+        const { clickTargets, flagTargets } = autoplay(grid, 5);
+        if (clickTargets.size > 0 || flagTargets.size > 0) {
+          completeTurn(clickTargets, flagTargets, { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+        }
       }
     }, 100);
     return () => {
