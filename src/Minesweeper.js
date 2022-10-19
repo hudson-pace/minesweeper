@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import autoplay from './autoplay';
+import { countFlagsAroundIndex, getIndexListAroundTile, generateGrid, countMines } from "./gridUtils";
+import Tile from './Tile';
 
 const GameState = {
   Lost: 'Lost',
@@ -6,164 +9,66 @@ const GameState = {
   InProgress: 'InProgress',
 };
 
-// courtesy of Fisher-Yates
-const shuffleArray = (arr) => {
-  let m = arr.length, t, i;
-  while (m) {
-    i = Math.floor(Math.random() * m--);
-    t = arr[m];
-    arr[m] = arr[i];
-    arr[i] = t;
-  }
-  return arr;
-}
-
-// Given a grid and an index, return a list of valid indices within the given radius.
-// **includes tile at the given index**
-const getIndexListAroundTile = (index, width, height, radius) => {
-  const effectiveRadius = radius - 1;
-  const {x, y} = getCoordsFromIndex(index, width);
-  const coordList = [];
-  for (let i = 0 - effectiveRadius; i <= 0 + effectiveRadius; i++) {
-    for (let j = 0 - effectiveRadius; j <= 0 + effectiveRadius; j++) {
-      const x2 = x + i;
-      const y2 = y + j;
-      if (coordsAreValid(x2, y2, width, height)) {
-        coordList.push(getIndexFromCoords(x2, y2, width, height));
-      }
-    }
-  }
-  return coordList;
-}
-
-const getIndexFromCoords = (x, y, width, height) => {
-  return coordsAreValid(x, y, width, height) ? (y * width) + x : -1;
-}
-const getCoordsFromIndex = (index, width) => {
-  return {
-    x: index % width,
-    y: Math.floor(index / width),
-  }
-}
-
-const countMines = (index, width, height, grid) => {
-  let mineCount = 0;
-  if (grid[index].value === -1) {
-    return 1;
-  }
-  getIndexListAroundTile(index, width, height, 2).forEach((i) => {
-    if (i !== -1 && grid[i].value === -1) {
-      mineCount++;
-    }
-  });
-  return mineCount;
-}
-
-const coordsAreValid = (x, y, width, height) => {
-  return (x >= 0 && y >= 0 && x < width && y < height);
-}
-
-const updateMineCounts = (grid, width, height) => {
-  for (let i = 0; i < grid.length; i++) {
-    if (grid[i].value !== -1) {
-      grid[i] = {
-        ...grid[i],
-        value: countMines(i, width, height, grid),
+const updateMineCounts = (grid) => {
+  for (let i = 0; i < grid.data.length; i++) {
+    if (grid.data[i].value !== -1) {
+      grid.data[i] = {
+        ...grid.data[i],
+        value: countMines(i, grid),
       }
     }
   }
 }
 
-const generateGrid = (width, height, mineCount) => {
-  let grid = new Array(width * height).fill(0);
-  grid = grid.map((value) => { return { value }});
-  for (let i = 0; i < Math.min(width * height, mineCount); i++) {
-    grid[i].value = -1;
-  }
-  shuffleArray(grid);
-
-  grid = grid.map((tile, index) => {
-    return {
-      ...tile,
-      flagged: false,
-      exposed: false,
-      index
-    }
-  });
-  return grid;
-}
-
-const countFlagsAroundIndex = (index, grid, width, height) => {
-  let flagCount = 0;
-
-  getIndexListAroundTile(index, width, height, 2).forEach((i) => {
-    if (grid[i].flagged) {
-      flagCount++;
-    }
-  });
-
-  return flagCount;
-}
-
-const countUnexposedTilesAroundIndex = (index, grid, width, height) => {
-  let unexposedTileCount = 0;
-  getIndexListAroundTile(index, width, height, 2).forEach((i) => {
-    if (!grid[i].exposed) {
-      unexposedTileCount++;
-    }
-  });
-  return unexposedTileCount;
-}
-
-const showTile = (index, grid, width, height) => {
-  const tile = {...grid[index]};
+const showTile = (index, grid) => {
+  const tile = {...grid.data[index]};
   tile.exposed = true;
-  grid[index] = tile;
+  grid.data[index] = tile;
   if (tile.value === 0) {
-    getIndexListAroundTile(index, width, height, 2).forEach((i) => {
-      if (!grid[i].exposed && !grid[i].flagged) {
-        showTile(i, grid, width, height);
+    getIndexListAroundTile(index, grid, 2).forEach((i) => {
+      if (!grid.data[i].exposed && !grid.data[i].flagged) {
+        showTile(i, grid);
       }
     });
   }
 }
 
-const showNeighbors = (index, grid, width, height) => {
-  getIndexListAroundTile(index, width, height, 2).forEach((i) => {
-    if (!grid[i].exposed && !grid[i].flagged) {
-      showTile(i, grid, width, height);
+const showNeighbors = (index, grid) => {
+  getIndexListAroundTile(index, grid, 2).forEach((i) => {
+    if (!grid.data[i].exposed && !grid.data[i].flagged) {
+      showTile(i, grid);
     }
   });
 }
 
-const getRandomTile = (width, height) => {
-  return Math.floor(Math.random() * width * height);
+const getRandomTile = (grid) => {
+  return Math.floor(Math.random() * grid.width * grid.height);
 }
 
 // returns an empty tile that is not within the provided list of indices.
-const findValidEmptyTile = (width, height, grid, protectedIndices = []) => {
+const findValidEmptyTile = (grid, protectedIndices = []) => {
   let candidateIndex;
   do {
-    candidateIndex = getRandomTile(width, height);
-  } while (grid[candidateIndex].value === -1 || protectedIndices.includes(candidateIndex));
+    candidateIndex = getRandomTile(grid);
+  } while (grid.data[candidateIndex].value === -1 || protectedIndices.includes(candidateIndex));
   return candidateIndex;
 }
 
-const clearMinesAroundTile = (index, grid, width, height) => {
-  const indices = getIndexListAroundTile(index, width, height, 2);
+const clearMinesAroundTile = (index, grid) => {
+  const indices = getIndexListAroundTile(index, grid, 2);
   indices.forEach((i) => {
-    if (grid[i].value === -1) {
-      const newIndex = findValidEmptyTile(width, height, grid, indices);
-      const temp = grid[i];
-      grid[i] = {...grid[newIndex], index: i};
-      grid[newIndex] = {...temp, index: newIndex};
+    if (grid.data[i].value === -1) {
+      const newIndex = findValidEmptyTile(grid, indices);
+      const temp = grid.data[i];
+      grid.data[i] = {...grid.data[newIndex], index: i};
+      grid.data[newIndex] = {...temp, index: newIndex};
     }
   });
 }
 
 const checkForWin = (grid, setGameState) => {
   let win = true;
-  for (const tile of grid) {
+  for (const tile of grid.data) {
     if (tile.value === -1 && tile.exposed) {
       setGameState(GameState.Lost);
     } else if (tile.value !== -1 && !tile.exposed) {
@@ -175,276 +80,91 @@ const checkForWin = (grid, setGameState) => {
   }
 }
 
-const clickOnTile = (e, index, newGrid, width, height, firstClick, setFirstClick, gameState) => {
+const clickOnTile = (e, index, newGrid, firstClick, setFirstClick, gameState) => {
   if (gameState !== GameState.InProgress) return;
   if (firstClick) {
     setFirstClick(false);
-    if (countMines(index, width, height, newGrid) > 0) {
-      clearMinesAroundTile(index, newGrid, width, height);
+    if (countMines(index, newGrid) > 0) {
+      clearMinesAroundTile(index, newGrid);
     }
-    updateMineCounts(newGrid, width, height);
+    updateMineCounts(newGrid);
   }
-  if (!newGrid[index].exposed && !newGrid[index].flagged) {
-    showTile(index, newGrid, width, height);
-  } else if (e.buttons === 2 && newGrid[index].exposed && newGrid[index].value === countFlagsAroundIndex(index, newGrid, width, height)) {
-    showNeighbors(index, newGrid, width, height);
+  if (!newGrid.data[index].exposed && !newGrid.data[index].flagged) {
+    showTile(index, newGrid);
+  } else if (e.buttons === 2 && newGrid.data[index].exposed && newGrid.data[index].value === countFlagsAroundIndex(index, newGrid)) {
+    showNeighbors(index, newGrid);
   }
   return newGrid;
 }
 
-const completeTurn = (clickTargets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
-  const newGrid = grid.slice();
+const completeTurn = (clickTargets, flagTargets, e, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount) => {
+  const newGrid = { ...grid }
 
   clickTargets.forEach((target) => {
-    clickOnTile(e, target, newGrid, width, height, firstClick, setFirstClick, gameState);
+    clickOnTile(e, target, newGrid, firstClick, setFirstClick, gameState);
   });
 
   flagTargets.forEach((target) => {
-    flagCount = rightClickOnTile(e, target, newGrid, setGrid, flagCount, setFlagCount, gameState, setGameState);
+    flagCount = rightClickOnTile(e, target, newGrid, setGrid, flagCount, gameState, setGameState);
   });
 
   setGrid(newGrid);
   checkForWin(newGrid, setGameState);
-  setFlagCount(flagCount);
 }
 
-const handleClick = (e, index, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
-  completeTurn([index], [], e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
+const handleClick = (e, index, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount) => {
+  completeTurn([index], [], e, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
 }
 
-const rightClickOnTile = (e, index, grid, setGrid, flagCount, setFlagCount, gameState, setGameState) => {
-  if (gameState === GameState.InProgress && (flagCount > 0 || grid[index].flagged) && !grid[index].exposed) {
-    const tile = {...grid[index]};
+const rightClickOnTile = (e, index, grid, setGrid, flagCount, gameState, setGameState) => {
+  if (gameState === GameState.InProgress && (flagCount > 0 || grid.data[index].flagged) && !grid.data[index].exposed) {
+    const tile = {...grid.data[index]};
     const newCount = flagCount + (tile.flagged ? 1 : -1);
     tile.flagged = !tile.flagged;
-    grid[index] = tile;
+    grid.data[index] = tile;
     return newCount;
   }
 }
-const handleRightClick = (e, index, grid, setGrid, flagCount, setFlagCount, gameState, setGameState, width, height, firstClick, setFirstClick) => {
+const handleRightClick = (e, index, grid, setGrid, flagCount, gameState, setGameState, firstClick, setFirstClick) => {
   e.preventDefault();
-  completeTurn([], [index], e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
+  completeTurn([], [index], e, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
 }
-
-const startAutoplay = (grid, width, height, e, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
-  return setInterval(() => {
-    console.log('making a move (automatically!)');
-    const targets = new Set();
-    const flagTargets = new Set();
-    grid.forEach((tile) => {
-      if (tile.exposed && tile.value === countFlagsAroundIndex(tile.index, grid, width, height)) {
-        getIndexListAroundTile(tile.index, width, height, 2).forEach((index) => {
-          if (!grid[index].exposed && !grid[index].flagged) {
-            targets.add(index);
-          }
-        });
-      }
-      if (tile.exposed) {
-        if (tile.value === countUnexposedTilesAroundIndex(tile.index, grid, width, height)) {
-          getIndexListAroundTile(tile.index, width, height, 2).forEach((index) => {
-            if (!grid[index].exposed && !grid[index].flagged) {
-              flagTargets.add(index);
-            }
-          });
-        }
-      }
-    });
-    completeTurn(targets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
-  }, 300);
-}
-
-const autoplayMk2 = (grid, width, height, e, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
-  return setInterval(() => {
-    console.log('making a move (automatically!)');
-    const targets = new Set();
-    const flagTargets = new Set();
-    grid.forEach((tile) => {
-      if (tile.exposed && tile.value === countFlagsAroundIndex(tile.index, grid, width, height)) {
-        getIndexListAroundTile(tile.index, width, height, 2).forEach((index) => {
-          if (!grid[index].exposed && !grid[index].flagged) {
-            targets.add(index);
-          }
-        });
-      }
-      if (tile.exposed) {
-        if (tile.value > countFlagsAroundIndex(tile.index, grid, width, height)) {
-          const candidates = getIndexListAroundTile(tile.index, width, height, 2).filter((t) => !grid[t].flagged && !grid[t].exposed);
-          if (candidates.length === tile.value - countFlagsAroundIndex(tile.index, grid, width, height)) {
-            flagTargets.add(...candidates);
-          }
-        }
-      }
-    });
-    completeTurn(targets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
-  }, 300);
-}
-
-const generateBinaryStrings = (length, oneCount) => {
-  const total = Math.pow(2, length);
-  const strings = [];
-  for (let i = 0; i < total; i++) {
-    const str = i.toString(2);
-    if (str.split('1').length === oneCount + 1) {
-      const pad = length - str.length;
-      strings.push('0'.repeat(pad).concat(str));
-    }
-  }
-  return strings;
-}
-
-const checksOut = (combination, affectedParties, grid, width, height) => {
-  for (let i = 0; i < affectedParties.length; i++) {
-    const party = affectedParties[i];
-    console.log(combination.filter((c) => getIndexListAroundTile(party, width, height, 2).includes(c)).length)
-    if (!(grid[party].value >= countFlagsAroundIndex(party, grid, width, height) + combination.filter((c) => getIndexListAroundTile(party, width, height, 2).includes(c)).length)) {
-      return false;
-    }
-  };
-  return true;
-}
-
-const autoplayMk3 = (grid, width, height, e, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
-  return setInterval(() => {
-    console.log('making a move (automatically!)');
-    const targets = new Set();
-    const flagTargets = new Set();
-    grid.forEach((tile) => {
-      if (tile.exposed && tile.value === countFlagsAroundIndex(tile.index, grid, width, height)) {
-        getIndexListAroundTile(tile.index, width, height, 2).forEach((index) => {
-          if (!grid[index].exposed && !grid[index].flagged) {
-            targets.add(index);
-          }
-        });
-      }
-
-      if (tile.exposed) {
-        const flags = countFlagsAroundIndex(tile.index, grid, width, height)
-        if (tile.value > flags) {
-          const candidates = getIndexListAroundTile(tile.index, width, height, 2).filter((t) => !grid[t].flagged && !grid[t].exposed);
-          const affectedParties = new Set();
-          candidates.forEach((t) => {
-            const f = getIndexListAroundTile(t, width, height, 2);
-            const ff = f.filter((i) => grid[i].exposed)
-            affectedParties.add(...ff);
-          });
-          let good = false;
-          let choice;
-          const hey = generateBinaryStrings(candidates.length, tile.value - flags);
-          for (let i = 0; i < hey.length; i++) {
-            const s = hey[i];
-            const combination = [];
-            for (let i = 0; i < s.length; i++) {
-              if (s[i] === '1') {
-                combination.push(candidates[i]);
-              }
-            }
-            if (checksOut(combination, Array.from(affectedParties), grid, width, height)) {
-              if (!good) {
-                good = true;
-                choice = combination;
-              } else {
-                good = false;
-                break;
-              }
-            }
-          }
-          if (good) {
-            flagTargets.add(...choice);
-          }
-        }
-      }
-    });
-    completeTurn(targets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
-  }, 100);
-}
-
-const autoplayMk4 = (grid, width, height, e, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount) => {
-  return setInterval(() => {
-    console.log('making a move (automatically!)');
-    const targets = new Set();
-    const flagTargets = new Set();
-    grid.forEach((tile) => {
-      if (tile.exposed && tile.value === countFlagsAroundIndex(tile.index, grid, width, height)) {
-        getIndexListAroundTile(tile.index, width, height, 2).forEach((index) => {
-          if (!grid[index].exposed && !grid[index].flagged) {
-            targets.add(index);
-          }
-        });
-      }
-
-      if (tile.exposed) {
-        const flags = countFlagsAroundIndex(tile.index, grid, width, height)
-        if (tile.value > flags) {
-          const candidates = getIndexListAroundTile(tile.index, width, height, 2).filter((t) => !grid[t].flagged && !grid[t].exposed);
-          const affectedParties = new Set();
-          candidates.forEach((t) => {
-            const f = getIndexListAroundTile(t, width, height, 2);
-            const ff = f.filter((i) => grid[i].exposed)
-            affectedParties.add(...ff);
-          });
-          const validCombos = [];
-          const hey = generateBinaryStrings(candidates.length, tile.value - flags);
-          for (let i = 0; i < hey.length; i++) {
-            const s = hey[i];
-            const combination = [];
-            for (let i = 0; i < s.length; i++) {
-              if (s[i] === '1') {
-                combination.push(candidates[i]);
-              }
-            }
-            if (checksOut(combination, Array.from(affectedParties), grid, width, height)) {
-              validCombos.push(s);
-            }
-          }
-          if (validCombos.length > 0) {
-            console.log(validCombos);
-            for (let i = 0; i < candidates.length; i++) {
-              let valid = true;
-              for (let j = 0; j < validCombos.length; j++) {
-                if (validCombos[j][i] === '0') {
-                  valid = false;
-                }
-              }
-              if (valid) {
-                console.log(i)
-                flagTargets.add(candidates[i]);
-              }
-            }
-          }
-        }
-      }
-    });
-    completeTurn(targets, flagTargets, e, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
-  }, 100);
-}
-
-export default function Minesweeper() {
-  const width = 18; // 10;
-  const height = 14; // 10;
-  const mineCount = 40; // 10;
+export default function Minesweeper(props) {
+  const { width, height, mineCount } = props;
   const [grid, setGrid] = useState(() => {
     return generateGrid(width, height, mineCount);
   });
   const [firstClick, setFirstClick] = useState(true);
-  const [flagCount, setFlagCount] = useState(mineCount);
   const [gameState, setGameState] = useState(GameState.InProgress);
 
+  let flagCount = mineCount;
+  grid.data.forEach((tile) => {
+    if (!tile.exposed && tile.flagged) {
+      flagCount--;
+    }
+  });
+
   useEffect(() => {
-    const autoplayInterval = autoplayMk4(grid, width, height, { buttons: 0 }, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount);
+    const autoplayInterval = setTimeout(() => {
+      const { clickTargets, flagTargets } = autoplay(grid, 4);
+      if (clickTargets.size > 0 || flagTargets.size > 0) {
+        completeTurn(clickTargets, flagTargets, { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+      }
+    }, 100);
     return () => {
       clearInterval(autoplayInterval);
     }
   }, [firstClick, gameState, grid, flagCount]);
 
-  const squares = grid.map((tile) => {
+  const squares = grid.data.map((tile) => {
     return <Tile
       value={tile.value}
       exposed={tile.exposed}
       flagged={tile.flagged}
       index={tile.index}
       key={tile.index}
-      onClick={(e, index) => handleClick(e, index, grid, setGrid, width, height, firstClick, setFirstClick, gameState, setGameState, flagCount, setFlagCount)}
-      onContextMenu={(e, index) => handleRightClick(e, index, grid, setGrid, flagCount, setFlagCount, gameState, setGameState, width, height, firstClick, setFirstClick)}
+      onClick={(e, index) => handleClick(e, index, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount)}
+      onContextMenu={(e, index) => handleRightClick(e, index, grid, setGrid, flagCount, gameState, setGameState, firstClick, setFirstClick)}
     />
   });
   const rows = [];
@@ -465,23 +185,4 @@ export default function Minesweeper() {
       </div>
     </div>
   )
-}
-
-function Tile(props) {
-  let classes = 'tile';
-  if (!props.exposed) {
-    classes += ' unseen';
-    if (props.flagged) {
-      classes += ' flagged';
-    }
-  } else if (props.value > 0) {
-    classes += ` mines-${props.value}`;
-  }
-  return <div
-    className={classes}
-    onContextMenu={(e) => props.onContextMenu(e, props.index)}
-    onClick={(e) => props.onClick(e, props.index)}
-    >
-      {props.value !== 0 ? props.value : ''}
-    </div>
 }
