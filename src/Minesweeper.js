@@ -77,7 +77,7 @@ const handleRightClick = (e, index, grid, setGrid, flagCount, gameState, setGame
   completeTurn([], [index], e, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
 }
 export default function Minesweeper(props) {
-  const { width, height, mineCount } = props;
+  const { width, height, mineCount, shouldAutoplay } = props;
   const [grid, setGrid] = useState(() => {
     return generateEmptyGrid(width, height, mineCount);
   });
@@ -92,27 +92,32 @@ export default function Minesweeper(props) {
   });
 
   useEffect(() => {
-    const autoplayInterval = setTimeout(() => {
-      
-      if (gameState === GameState.InProgress) {
-        if (firstClick) {
-          completeTurn([getRandomTile(grid)], [], { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
-        } else {
-          const { clickTargets, flagTargets } = autoplay(grid, 5);
-          if (clickTargets.size > 0 || flagTargets.size > 0) {
-            completeTurn(clickTargets, flagTargets, { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+    let autoplayInterval;
+    if (shouldAutoplay) {
+      autoplayInterval = setTimeout(() => {
+        
+        if (gameState === GameState.InProgress) {
+          if (firstClick) {
+            completeTurn([getRandomTile(grid)], [], { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+          } else {
+            const { clickTargets, flagTargets } = autoplay(grid, 5);
+            if (clickTargets.size > 0 || flagTargets.size > 0) {
+              completeTurn(clickTargets, flagTargets, { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+            }
           }
+        } else {
+          setGrid(generateEmptyGrid(width, height, mineCount));
+          setGameState(GameState.InProgress);
+          setFirstClick(true);
         }
-      } else {
-        setGrid(generateEmptyGrid(width, height, mineCount));
-        setGameState(GameState.InProgress);
-        setFirstClick(true);
-      }
-    }, 10);
-    return () => {
-      clearInterval(autoplayInterval);
+      }, 10);
     }
-  }, [firstClick, gameState, grid, flagCount]);
+    return () => {
+      if (autoplayInterval) {
+        clearInterval(autoplayInterval);
+      }
+    }
+  }, [firstClick, gameState, grid, flagCount, width, height, mineCount, shouldAutoplay]);
 
   const squares = grid.data.map((tile) => {
     return <Tile

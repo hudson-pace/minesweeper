@@ -10,6 +10,13 @@ root.render(
       width={18}
       height={14}
       mineCount={40}
+      shouldAutoplay={false}
+    />
+    <Minesweeper
+      width={10}
+      height={10}
+      mineCount={16}
+      shouldAutoplay={true}
     />
   </React.StrictMode>
 );
