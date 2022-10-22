@@ -42,3 +42,37 @@
 .unseen.flagged {
   background-color: blue;
 }
+
+.game-container {
+  position: relative;
+  display: inline-block;
+}
+
+
+
+.hidden {
+  display: none;
+}
+
+.overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.refresh-button {
+  display: inline-block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  background-color: white;
+  border: 2px solid black;
+  cursor: default;
+  user-select: none;
+}
+.refresh-button:hover {
+  background-color: lightgrey;
+}

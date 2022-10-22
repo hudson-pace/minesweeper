@@ -32,11 +32,10 @@ const showNeighbors = (index, grid) => {
 
 
 
-const clickOnTile = (e, index, newGrid, firstClick, setFirstClick, gameState) => {
+const clickOnTile = (e, index, newGrid, gameState) => {
   if (gameState !== GameState.InProgress) return;
-  if (firstClick) {
+  if (!newGrid.initialized) {
     initializeGrid(newGrid, index);
-    setFirstClick(false);
   }
   if (!newGrid.data[index].exposed && !newGrid.data[index].flagged) {
     showTile(index, newGrid);
@@ -46,10 +45,10 @@ const clickOnTile = (e, index, newGrid, firstClick, setFirstClick, gameState) =>
   return newGrid;
 }
 
-const completeTurn = (clickTargets, flagTargets, e, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount) => {
+const completeTurn = (clickTargets, flagTargets, e, grid, setGrid, gameState, setGameState, flagCount) => {
   const newGrid = { ...grid }
   clickTargets.forEach((target) => {
-    clickOnTile(e, target, newGrid, firstClick, setFirstClick, gameState);
+    clickOnTile(e, target, newGrid, gameState);
   });
   flagTargets.forEach((target) => {
     flagCount = rightClickOnTile(e, target, newGrid, setGrid, flagCount, gameState, setGameState);
@@ -59,8 +58,8 @@ const completeTurn = (clickTargets, flagTargets, e, grid, setGrid, firstClick, s
   setGameState(calculateGameState(newGrid));
 }
 
-const handleClick = (e, index, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount) => {
-  completeTurn([index], [], e, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+const handleClick = (e, index, grid, setGrid, gameState, setGameState, flagCount) => {
+  completeTurn([index], [], e, grid, setGrid, gameState, setGameState, flagCount);
 }
 
 const rightClickOnTile = (e, index, grid, setGrid, flagCount, gameState, setGameState) => {
@@ -72,16 +71,20 @@ const rightClickOnTile = (e, index, grid, setGrid, flagCount, gameState, setGame
     return newCount;
   }
 }
-const handleRightClick = (e, index, grid, setGrid, flagCount, gameState, setGameState, firstClick, setFirstClick) => {
+const handleRightClick = (e, index, grid, setGrid, flagCount, gameState, setGameState) => {
   e.preventDefault();
-  completeTurn([], [index], e, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+  completeTurn([], [index], e, grid, setGrid, gameState, setGameState, flagCount);
+}
+
+const handleRefreshClick = (setGrid, setGameState, width, height, mineCount) => {
+  setGameState(GameState.InProgress);
+  setGrid(generateEmptyGrid(width, height, mineCount));
 }
 export default function Minesweeper(props) {
   const { width, height, mineCount, shouldAutoplay } = props;
   const [grid, setGrid] = useState(() => {
     return generateEmptyGrid(width, height, mineCount);
   });
-  const [firstClick, setFirstClick] = useState(true);
   const [gameState, setGameState] = useState(GameState.InProgress);
 
   let flagCount = mineCount;
@@ -97,18 +100,17 @@ export default function Minesweeper(props) {
       autoplayInterval = setTimeout(() => {
         
         if (gameState === GameState.InProgress) {
-          if (firstClick) {
-            completeTurn([getRandomTile(grid)], [], { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+          if (!grid.initialized) {
+            completeTurn([getRandomTile(grid)], [], { buttons: 0 }, grid, setGrid, gameState, setGameState, flagCount);
           } else {
             const { clickTargets, flagTargets } = autoplay(grid, 5);
             if (clickTargets.size > 0 || flagTargets.size > 0) {
-              completeTurn(clickTargets, flagTargets, { buttons: 0 }, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount);
+              completeTurn(clickTargets, flagTargets, { buttons: 0 }, grid, setGrid, gameState, setGameState, flagCount);
             }
           }
         } else {
           setGrid(generateEmptyGrid(width, height, mineCount));
           setGameState(GameState.InProgress);
-          setFirstClick(true);
         }
       }, 10);
     }
@@ -117,7 +119,7 @@ export default function Minesweeper(props) {
         clearInterval(autoplayInterval);
       }
     }
-  }, [firstClick, gameState, grid, flagCount, width, height, mineCount, shouldAutoplay]);
+  }, [gameState, grid, flagCount, width, height, mineCount, shouldAutoplay]);
 
   const squares = grid.data.map((tile) => {
     return <Tile
@@ -126,8 +128,8 @@ export default function Minesweeper(props) {
       flagged={tile.flagged}
       index={tile.index}
       key={tile.index}
-      onClick={(e, index) => handleClick(e, index, grid, setGrid, firstClick, setFirstClick, gameState, setGameState, flagCount)}
-      onContextMenu={(e, index) => handleRightClick(e, index, grid, setGrid, flagCount, gameState, setGameState, firstClick, setFirstClick)}
+      onClick={(e, index) => handleClick(e, index, grid, setGrid, gameState, setGameState, flagCount)}
+      onContextMenu={(e, index) => handleRightClick(e, index, grid, setGrid, flagCount, gameState, setGameState)}
     />
   });
   const rows = [];
@@ -138,6 +140,9 @@ export default function Minesweeper(props) {
     <div>
       <h1>Minesweeper!</h1>
       <div className="game-container">
+        <div className={`overlay ${gameState === GameState.InProgress ? 'hidden' : ''}`}>
+            <div className='refresh-button' onClick={() => handleRefreshClick(setGrid, setGameState, width, height, mineCount)}>refresh</div>
+        </div>
         {rows}
       </div>
       <div>
