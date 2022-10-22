@@ -1,34 +1,9 @@
 import {
     countFlagsAroundIndex,
-    countUnexposedTilesAroundIndex,
-    getCoordsFromIndex,
     getFrontier,
     getIndexListAroundTile,
     getUnexposedUnflaggedTilesAroundIndex,
 } from './gridUtils';
-
-/*
-    Given the current state of the grid and a level of intelligence to use,
-    return lists of indices to flag and to click on.
-*/
-export default function autoplay(grid, level) {
-    switch (level) {
-        case 1:
-            return autoplayMk1(grid);
-        case 3:
-            return autoplayMk3(grid);
-        case 4:
-            return autoplayMk4(grid);
-        case 5:
-            return autoplayMk5(grid);
-        default:
-            return {
-                clickTargets: [],
-                flagTargets: [],
-            };
-
-    }
-}
 
 const getClickTargets = (grid) => {
     const clickTargets = new Set();
@@ -44,126 +19,6 @@ const getClickTargets = (grid) => {
     return clickTargets;
 }
 
-const autoplayMk1 = (grid) => {
-    const clickTargets = getClickTargets(grid);
-    const flagTargets = new Set();
-    grid.data.forEach((tile) => {
-        if (tile.exposed) {
-            if (tile.value === countUnexposedTilesAroundIndex(tile.index, grid)) {
-                getIndexListAroundTile(tile.index, grid, 2).forEach((index) => {
-                    if (!grid.data[index].exposed && !grid.data[index].flagged) {
-                        flagTargets.add(index);
-                    }
-                });
-            }
-        }
-    });
-
-    return {
-        clickTargets,
-        flagTargets,
-    }
-}
-
-const autoplayMk3 = (grid) => {
-    const clickTargets = getClickTargets(grid);
-    const flagTargets = new Set();
-    grid.data.forEach((tile) => {
-        if (tile.exposed) {
-            const flags = countFlagsAroundIndex(tile.index, grid);
-            if (tile.value > flags) {
-                const candidates = getIndexListAroundTile(tile.index, grid, 2).filter((t) => !grid.data[t].flagged && !grid.data[t].exposed);
-                const affectedParties = new Set();
-                candidates.forEach((t) => {
-                    const f = getIndexListAroundTile(t, grid, 2);
-                    const ff = f.filter((i) => grid.data[i].exposed);
-                    affectedParties.add(...ff);
-                });
-                let good = false;
-                let choice;
-                const hey = generateBinaryStrings(candidates.length, tile.value - flags);
-                for (let i = 0; i < hey.length; i++) {
-                    const s = hey[i];
-                    const combination = [];
-                    for (let j = 0; j < s.length; j++) {
-                        if (s[j] === '1') {
-                            combination.push(candidates[j]);
-                        }
-                    }
-                    if (checksOut(combination, Array.from(affectedParties), grid)) {
-                        if (!good) {
-                            good = true;
-                            choice = combination;
-                        } else {
-                            good = false;
-                            break;
-                        }
-                    }
-                }
-                if (good) {
-                    flagTargets.add(...choice);
-                }
-            }
-        }
-    });
-
-    return {
-        clickTargets,
-        flagTargets,
-    }
-}
-
-const autoplayMk4 = (grid) => {
-    const clickTargets = getClickTargets(grid);
-    const flagTargets = new Set();
-
-    grid.data.forEach((tile) => {
-        if (tile.exposed) {
-            const flags = countFlagsAroundIndex(tile.index, grid);
-            if (tile.value > flags) {
-                const candidates = getIndexListAroundTile(tile.index, grid, 2).filter((t) => !grid.data[t].flagged && !grid.data[t].exposed);
-                const affectedParties = new Set();
-                candidates.forEach((t) => {
-                    const f = getIndexListAroundTile(t, grid, 2);
-                    const ff = f.filter((i) => grid.data[i].exposed);
-                    affectedParties.add(...ff);
-                });
-                const validCombos = [];
-                const hey = generateBinaryStrings(candidates.length, tile.value - flags);
-                for (let i = 0; i < hey.length; i++) {
-                    const s = hey[i];
-                    const combination = [];
-                    for (let j = 0; j < s.length; j++) {
-                        if (s[j] === '1') {
-                            combination.push(candidates[j]);
-                        }
-                    }
-                    if (checksOut(combination, Array.from(affectedParties), grid)) {
-                        validCombos.push(s);
-                    }
-                }
-                if (validCombos.length > 0) {
-                    for (let j = 0; j < candidates.length; j++) {
-                        let valid = true;
-                        for (let k = 0; k < validCombos.length; k++) {
-                            if (validCombos[k][j] === '0') {
-                                valid = false;
-                            }
-                        }
-                        if (valid) {
-                            flagTargets.add(candidates[j]);
-                        }
-                    }
-                }
-            }
-        }
-    });
-    return {
-        clickTargets,
-        flagTargets,
-    }
-}
-
 // Accepts an array of arrays. Returns common elements.
 const getCommonElements = (arrays) => {
     let common = arrays[0];
@@ -177,7 +32,7 @@ const getSubsets = (arr, arrays) => {
     return arrays.filter((a) => a.tiles.every((el) => arr.includes(el)));
 }
 
-const autoplayMk5 = (grid) => {
+const autoplay = (grid) => {
     const clickTargets = getClickTargets(grid);
     const flagTargets = new Set();
 
@@ -253,6 +108,7 @@ const autoplayMk5 = (grid) => {
         flagTargets,
     }
 }
+export default autoplay;
 
 
 
@@ -268,14 +124,4 @@ const generateBinaryStrings = (length, oneCount) => {
     }
   }
   return strings;
-}
-
-const checksOut = (combination, affectedParties, grid) => {
-  for (let i = 0; i < affectedParties.length; i++) {
-    const party = affectedParties[i];
-    if (!(grid.data[party].value >= countFlagsAroundIndex(party, grid) + combination.filter((c) => getIndexListAroundTile(party, grid, 2).includes(c)).length)) {
-      return false;
-    }
-  };
-  return true;
 }

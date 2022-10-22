@@ -1,4 +1,8 @@
 import autoplay from "./autoplay";
+import squareGridUtils from './squareGridUtils';
+
+const getIndexListAroundTile = squareGridUtils.getIndexListAroundTile;
+const generateEmptyGrid = squareGridUtils.generateEmptyGrid;
 
 const countFlagsAroundIndex = (index, grid) => {
     let flagCount = 0;
@@ -18,67 +22,6 @@ const GameState = {
   InProgress: 'InProgress',
 };
 
-// Given a grid and an index, return a list of valid indices within the given radius.
-// **includes tile at the given index**
-const getIndexListAroundTile = (index, grid, radius) => {
-    const effectiveRadius = radius - 1;
-    const {x, y} = getCoordsFromIndex(index, grid);
-    const coordList = [];
-    for (let i = 0 - effectiveRadius; i <= 0 + effectiveRadius; i++) {
-        for (let j = 0 - effectiveRadius; j <= 0 + effectiveRadius; j++) {
-            const x2 = x + i;
-            const y2 = y + j;
-            if (coordsAreValid(x2, y2, grid)) {
-                coordList.push(getIndexFromCoords(x2, y2, grid));
-            }
-        }
-    }
-    return coordList;
-}
-
-const getIndexFromCoords = (x, y, grid) => {
-    return coordsAreValid(x, y, grid) ? (y * grid.width) + x : -1;
-}
-
-const getCoordsFromIndex = (index, grid) => {
-    return {
-      x: index % grid.width,
-      y: Math.floor(index / grid.width),
-    }
-}
-const coordsAreValid = (x, y, grid) => {
-    return (x >= 0 && y >= 0 && x < grid.width && y < grid.height);
-}
-const countUnexposedTilesAroundIndex = (index, grid) => {
-    let unexposedTileCount = 0;
-    getIndexListAroundTile(index, grid, 2).forEach((i) => {
-      if (!grid.data[i].exposed) {
-        unexposedTileCount++;
-      }
-    });
-    return unexposedTileCount;
-}
-
-const generateEmptyGrid = (width, height, mineCount) => {
-  const data = new Array(width * height).fill(0).map((value) => { return { value }});
-  for (let i = 0; i < Math.min(width * height, mineCount); i++) {
-    data[i].value = -1;
-  }
-  return {
-    width,
-    height,
-    data: data.map((tile, index) => {
-      return {
-        ...tile,
-        flagged: false,
-        exposed: false,
-        index
-      }
-    }),
-    initialized: false,
-  }
-}
-
 const calculateGameState = (grid) => {
   let win = true;
   for (const tile of grid.data) {
@@ -97,7 +40,7 @@ const gridIsSolvable = (grid, firstClickIndex) => {
 
   let clickTargets, flagTargets;
   do {
-    ({ clickTargets, flagTargets } = autoplay(grid, 5));
+    ({ clickTargets, flagTargets } = autoplay(grid));
     clickTargets.forEach((i) => {
       grid.data[i].exposed = true;
     });
@@ -111,7 +54,7 @@ const gridIsSolvable = (grid, firstClickIndex) => {
 }
 
 const getRandomTile = (grid) => {
-  return Math.floor(Math.random() * grid.width * grid.height);
+  return Math.floor(Math.random() * grid.data.length);
 }
 
 // returns an empty tile that is not within the provided list of indices.
@@ -135,7 +78,7 @@ const clearMinesAroundTile = (index, grid) => {
   });
 }
 
-const initializeGrid = (grid, firstClickIndex) => {
+const initializeGrid = (grid, firstClickIndex, guaranteedSolvable) => {
   grid.initialized = true;
   do {
     grid.data = shuffleArray((grid.data));
@@ -147,7 +90,7 @@ const initializeGrid = (grid, firstClickIndex) => {
       }
     });
     updateMineCounts(grid);
-  } while (!gridIsSolvable(grid, firstClickIndex));
+  } while (guaranteedSolvable && gridIsSolvable(grid, firstClickIndex));
 }
 
 // courtesy of Fisher-Yates
@@ -199,20 +142,11 @@ const updateMineCounts = (grid) => {
 export {
     countFlagsAroundIndex,
     getIndexListAroundTile,
-    getIndexFromCoords,
-    getCoordsFromIndex,
-    coordsAreValid,
-    countUnexposedTilesAroundIndex,
-    shuffleArray,
-    countMines,
     getFrontier,
     getUnexposedUnflaggedTilesAroundIndex,
-    updateMineCounts,
     GameState,
     calculateGameState,
     getRandomTile,
-    findValidEmptyTile,
-    clearMinesAroundTile,
     generateEmptyGrid,
     initializeGrid
 }

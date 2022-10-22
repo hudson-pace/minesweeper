@@ -10,7 +10,8 @@ root.render(
       width={18}
       height={14}
       mineCount={40}
-      shouldAutoplay={true}
+      shouldAutoplay={false}
+      guaranteedSolvable={false}
     />
   </React.StrictMode>
 );
