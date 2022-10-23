@@ -12,7 +12,7 @@ root.render(
       mineCount={10}
       shouldAutoplay={false}
       guaranteedSolvable={true}
-      shape={'triangle'}
+      shape={'hexagon'}
     />
   </React.StrictMode>
 );

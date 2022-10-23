@@ -45,6 +45,26 @@
   transform: scale(0.9);
 }
 
+.tile-container.hexagon {
+  height: 24px;
+  width: 60px;
+  transform-origin: center center;
+  clip-path: polygon(100% 50%, 75% 93%, 25% 93%, 0% 50%, 25% 7%, 75% 7%);
+  margin-left: 30px;
+  transform: scaleY(2.4);
+}
+.tile-container.hexagon .tile {
+  height: 100%;
+  width: 100%;
+  line-height: 25px;
+  transform-origin: center center;
+  transform: scale(0.9);
+  clip-path: polygon(100% 50%, 75% 93%, 25% 93%, 0% 50%, 25% 7%, 75% 7%);
+}
+.tile-container.hexagon .tile div {
+  transform: scaleY(0.42);
+}
+
 .row {
   text-align: center;
 }

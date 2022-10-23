@@ -1,12 +1,15 @@
 import autoplay from "./autoplay";
 import squareGridUtils from './squareGridUtils';
 import triangleGridUtils from './triangleGridUtils';
+import hexagonGridUtils from './hexagonGridUtils';
 
 
 const getShapeUtils = (shape) => {
   switch (shape) {
     case 'triangle':
       return triangleGridUtils;
+    case 'hexagon':
+      return hexagonGridUtils;
     case 'square':
     default:
       return squareGridUtils;
