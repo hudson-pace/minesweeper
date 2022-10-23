@@ -91,7 +91,7 @@ const handleRefreshClick = (setGrid, width, height, mineCount, guaranteedSolvabl
   setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable));
 }
 export default function Minesweeper(props) {
-  const { width, height, mineCount, shouldAutoplay, guaranteedSolvable } = props;
+  const { width, height, mineCount, shouldAutoplay, guaranteedSolvable, shape } = props;
   const [grid, setGrid] = useState(() => {
     return generateEmptyGrid(width, height, mineCount, guaranteedSolvable);
   });
@@ -140,11 +140,17 @@ export default function Minesweeper(props) {
       key={tile.index}
       onClick={(e, index) => handleClickOnTile(e, index, grid, setGrid, gameState, flagCount)}
       onContextMenu={(e, index) => handleRightClickOnTile(e, index, grid, setGrid, flagCount, gameState)}
+      shape={shape}
     />
   });
   const rows = [];
+  /*
   for (let i = 0; i < width; i++) {
     rows.push(<div className="row" key={i}>{squares.slice(i * width, (i + 1) * width)}</div>);;
+  }
+  */
+  for (let i = 0; i < height; i++) {
+    rows.push(<div className="row" key={i}>{squares.slice(Math.pow(i, 2), Math.min(Math.pow(i + 1, 2), squares.length))}</div>)
   }
   return (
     <div>

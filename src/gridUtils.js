@@ -1,8 +1,9 @@
 import autoplay from "./autoplay";
 import squareGridUtils from './squareGridUtils';
+import triangleGridUtils from './triangleGridUtils';
 
-const getIndexListAroundTile = squareGridUtils.getIndexListAroundTile;
-const generateEmptyGrid = squareGridUtils.generateEmptyGrid;
+const getIndexListAroundTile = triangleGridUtils.getIndexListAroundTile;
+const generateEmptyGrid = triangleGridUtils.generateEmptyGrid;
 
 const countFlagsAroundIndex = (index, grid) => {
     let flagCount = 0;
@@ -90,7 +91,7 @@ const initializeGrid = (grid, firstClickIndex, guaranteedSolvable) => {
       }
     });
     updateMineCounts(grid);
-  } while (guaranteedSolvable && gridIsSolvable(grid, firstClickIndex));
+  } while (guaranteedSolvable && !gridIsSolvable(grid, firstClickIndex));
 }
 
 // courtesy of Fisher-Yates

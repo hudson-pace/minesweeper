@@ -1,13 +1,25 @@
-.tile {
-  height: 30px;
-  width: 30px;
-  line-height: 30px;
-  text-align: center;
+.tile-container {
   display: inline-block;
+  height: 60px;
+  width: 30px;
+  background-color: black;
+  clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
   vertical-align: bottom;
-  border: 1px solid black;
-  box-sizing: border-box;
-  font-size: 20px;
+  transform-origin: center center;
+  transform: scaleX(2.1);
+}
+.row {
+  text-align: center;
+}
+
+.tile {
+  clip-path: polygon(10% 95%, 50% 15%, 90% 95%);
+  display: inline-block;
+  height: 100%;
+  width: 100%;
+  background-color: white;
+  line-height: 60px;
+  font-size: 30px;
   font-weight: bolder;
   user-select: none;
 }
@@ -34,9 +46,8 @@
   color: transparent;
   background-color: lightblue;
 }
-
-.unseen:hover {
-  border: 2px solid yellow;
+.tile-container:hover {
+  background-color: yellow;
 }
 
 .unseen.flagged {
@@ -75,4 +86,12 @@
 }
 .refresh-button:hover {
   background-color: lightgrey;
+}
+
+.tile-container:nth-child(even) {
+  transform-origin: center center;
+  transform: rotate(180deg) scaleX(2.1);
+}
+.tile-container:nth-child(even) div div {
+  transform: rotate(180deg);
 }
