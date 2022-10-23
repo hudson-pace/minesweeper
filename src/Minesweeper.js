@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import autoplay from './autoplay';
-import { countFlagsAroundIndex, getIndexListAroundTile, generateEmptyGrid, GameState, calculateGameState, getRandomTile, initializeGrid } from "./gridUtils";
+import { countFlagsAroundIndex, getIndexListAroundTile, generateEmptyGrid, GameState, calculateGameState, getRandomTile, initializeGrid, getRows } from "./gridUtils";
 import Tile from './Tile';
 
 
@@ -87,13 +87,13 @@ const handleRightClickOnTile = (e, index, grid, setGrid, flagCount, gameState) =
   }
 }
 
-const handleRefreshClick = (setGrid, width, height, mineCount, guaranteedSolvable) => {
-  setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable));
+const handleRefreshClick = (setGrid, width, height, mineCount, guaranteedSolvable, shape) => {
+  setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape));
 }
 export default function Minesweeper(props) {
   const { width, height, mineCount, shouldAutoplay, guaranteedSolvable, shape } = props;
   const [grid, setGrid] = useState(() => {
-    return generateEmptyGrid(width, height, mineCount, guaranteedSolvable);
+    return generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape);
   });
 
   let flagCount = mineCount;
@@ -120,7 +120,7 @@ export default function Minesweeper(props) {
             }
           }
         } else {
-          setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable));
+          setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape));
         }
       }, 10);
     }
@@ -129,7 +129,7 @@ export default function Minesweeper(props) {
         clearInterval(autoplayInterval);
       }
     }
-  }, [gameState, grid, flagCount, width, height, mineCount, shouldAutoplay, guaranteedSolvable]);
+  }, [gameState, grid, flagCount, width, height, mineCount, shouldAutoplay, guaranteedSolvable, shape]);
 
   const squares = grid.data.map((tile) => {
     return <Tile
@@ -143,21 +143,13 @@ export default function Minesweeper(props) {
       shape={shape}
     />
   });
-  const rows = [];
-  /*
-  for (let i = 0; i < width; i++) {
-    rows.push(<div className="row" key={i}>{squares.slice(i * width, (i + 1) * width)}</div>);;
-  }
-  */
-  for (let i = 0; i < height; i++) {
-    rows.push(<div className="row" key={i}>{squares.slice(Math.pow(i, 2), Math.min(Math.pow(i + 1, 2), squares.length))}</div>)
-  }
+  const rows = getRows(grid, squares);
   return (
     <div>
       <h1>Minesweeper!</h1>
       <div className="game-container">
         <div className={`overlay ${gameState === GameState.InProgress ? 'hidden' : ''}`}>
-            <div className='refresh-button' onClick={() => handleRefreshClick(setGrid, width, height, mineCount, guaranteedSolvable)}>refresh</div>
+            <div className='refresh-button' onClick={() => handleRefreshClick(setGrid, width, height, mineCount, guaranteedSolvable, shape)}>refresh</div>
         </div>
         {rows}
       </div>

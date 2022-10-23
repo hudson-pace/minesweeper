@@ -2,8 +2,28 @@ import autoplay from "./autoplay";
 import squareGridUtils from './squareGridUtils';
 import triangleGridUtils from './triangleGridUtils';
 
-const getIndexListAroundTile = triangleGridUtils.getIndexListAroundTile;
-const generateEmptyGrid = triangleGridUtils.generateEmptyGrid;
+
+const getShapeUtils = (shape) => {
+  switch (shape) {
+    case 'triangle':
+      return triangleGridUtils;
+    case 'square':
+    default:
+      return squareGridUtils;
+  }
+}
+
+const getIndexListAroundTile = (index, grid, radius) => {
+  return getShapeUtils(grid.shape).getIndexListAroundTile(index, grid, radius);
+}
+
+const generateEmptyGrid = (width, height, mineCount, guaranteedSolvable, shape) => {
+  return getShapeUtils(shape).generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape);
+}
+
+const getRows = (grid, squares) => {
+  return getShapeUtils(grid.shape).getRows(grid, squares);
+}
 
 const countFlagsAroundIndex = (index, grid) => {
     let flagCount = 0;
@@ -149,5 +169,6 @@ export {
     calculateGameState,
     getRandomTile,
     generateEmptyGrid,
-    initializeGrid
+    initializeGrid,
+    getRows,
 }

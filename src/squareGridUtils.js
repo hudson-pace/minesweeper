@@ -31,7 +31,7 @@ const getCoordsFromIndex = (index, grid) => {
     }
 }
 
-const generateEmptyGrid = (width, height, mineCount, guaranteedSolvable) => {
+const generateEmptyGrid = (width, height, mineCount, guaranteedSolvable, shape) => {
     const data = new Array(width * height).fill(0).map((value) => { return { value }});
     for (let i = 0; i < Math.min(width * height, mineCount); i++) {
         data[i].value = -1;
@@ -49,12 +49,22 @@ const generateEmptyGrid = (width, height, mineCount, guaranteedSolvable) => {
       }),
         initialized: false,
         guaranteedSolvable,
+        shape,
     }
+}
+
+const getRows = (grid, squares) => {
+    const rows = [];
+    for (let i = 0; i < grid.width; i++) {
+        rows.push(<div className="row" key={i}>{squares.slice(i * grid.width, (i + 1) * grid.width)}</div>);;
+    }
+    return rows;
 }
 
 const utils = {
     getIndexListAroundTile,
     generateEmptyGrid,
+    getRows,
 };
 
 export default utils;

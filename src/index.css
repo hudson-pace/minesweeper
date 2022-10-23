@@ -1,28 +1,54 @@
 .tile-container {
   display: inline-block;
+  background-color: black;
+  vertical-align: bottom;
+}
+
+.tile {
+  display: inline-block;
+  background-color: white;
+  font-weight: bolder;
+  user-select: none;
+  font-size: 26px;
+}
+
+.tile-container.triangle {
   height: 60px;
   width: 30px;
-  background-color: black;
   clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
-  vertical-align: bottom;
   transform-origin: center center;
   transform: scaleX(2.1);
 }
+.tile-container.triangle .tile {
+  clip-path: polygon(10% 95%, 50% 15%, 90% 95%);
+  height: 100%;
+  width: 100%;
+  line-height: 60px;
+}
+.tile-container.triangle:nth-child(even) {
+  transform-origin: center center;
+  transform: rotate(180deg) scaleX(2.1);
+}
+.tile-container.triangle:nth-child(even) div div {
+  transform: rotate(180deg);
+}
+
+.tile-container.square {
+  height: 60px;
+  width: 60px;
+}
+.tile-container.square .tile {
+  height: 100%;
+  width: 100%;
+  line-height: 60px;
+  transform-origin: center center;
+  transform: scale(0.9);
+}
+
 .row {
   text-align: center;
 }
 
-.tile {
-  clip-path: polygon(10% 95%, 50% 15%, 90% 95%);
-  display: inline-block;
-  height: 100%;
-  width: 100%;
-  background-color: white;
-  line-height: 60px;
-  font-size: 30px;
-  font-weight: bolder;
-  user-select: none;
-}
 .mine {
   color: black;
 }
@@ -86,12 +112,4 @@
 }
 .refresh-button:hover {
   background-color: lightgrey;
-}
-
-.tile-container:nth-child(even) {
-  transform-origin: center center;
-  transform: rotate(180deg) scaleX(2.1);
-}
-.tile-container:nth-child(even) div div {
-  transform: rotate(180deg);
 }

@@ -1,5 +1,5 @@
 export default function Tile(props) {
-  let classes = `tile ${props.shape}`;
+  let classes = `tile`;
   if (!props.exposed) {
     classes += ' unseen';
     if (props.flagged) {
@@ -9,11 +9,11 @@ export default function Tile(props) {
     classes += ` mines-${props.value}`;
   }
   return (
-    <div className={'tile-container'}>
-      <div className={classes}
-        onContextMenu={(e) => props.onContextMenu(e, props.index)}
-        onClick={(e) => props.onClick(e, props.index)}
-      >
+    <div className={`tile-container ${props.shape}`}
+      onContextMenu={(e) => props.onContextMenu(e, props.index)}
+      onClick={(e) => props.onClick(e, props.index)}
+    >
+      <div className={classes}>
           <div>{props.value !== 0 ? props.value : ''}</div>
       </div>
     </div>
