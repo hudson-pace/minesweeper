@@ -2,6 +2,7 @@ import autoplay from "./autoplay";
 import squareGridUtils from './squareGridUtils';
 import triangleGridUtils from './triangleGridUtils';
 import hexagonGridUtils from './hexagonGridUtils';
+import octagonAndSquareGridUtils from './ocatgonAndSquareGridUtils';
 
 
 const getShapeUtils = (shape) => {
@@ -10,6 +11,8 @@ const getShapeUtils = (shape) => {
       return triangleGridUtils;
     case 'hexagon':
       return hexagonGridUtils;
+    case 'octagon-and-square':
+      return octagonAndSquareGridUtils;
     case 'square':
     default:
       return squareGridUtils;

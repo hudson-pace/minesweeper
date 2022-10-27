@@ -65,6 +65,36 @@
   transform: scaleY(0.42);
 }
 
+.tile-container.octagon-and-square {
+  height: 30px;
+  width: 30px;
+  margin-left: 30px;
+  transform: rotate(45deg);
+}
+
+.row:nth-child(even) .tile-container.octagon-and-square {
+  transform: scale(2);
+  clip-path: polygon(33% 0%, 67% 0%, 100% 33%, 100% 67%, 67% 100%, 33% 100%, 0% 67%, 0% 33%);
+}
+.row:nth-child(even) .tile-container.octagon-and-square .tile {
+  clip-path: polygon(33% 0%, 67% 0%, 100% 33%, 100% 67%, 67% 100%, 33% 100%, 0% 67%, 0% 33%);
+}
+
+.row:nth-child(odd) .tile-container.octagon-and-square .tile div {
+  transform: rotate(-45deg);
+}
+.row:nth-child(even) .tile-container.octagon-and-square .tile div {
+  transform: scale(0.5);
+}
+
+.tile-container.octagon-and-square .tile {
+  height: 100%;
+  width: 100%;
+  line-height: 30px;
+  transform-origin: center center;
+  transform: scale(0.9);
+}
+
 .row {
   text-align: center;
 }
