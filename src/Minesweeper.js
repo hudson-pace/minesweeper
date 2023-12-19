@@ -91,7 +91,7 @@ const handleRefreshClick = (setGrid, width, height, mineCount, guaranteedSolvabl
   setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape));
 }
 export default function Minesweeper(props) {
-  const { width, height, mineCount, shouldAutoplay, guaranteedSolvable, shape } = props;
+  const { width, height, mineCount, shouldAutoplay, interval, guaranteedSolvable, shape } = props;
   const [grid, setGrid] = useState(() => {
     return generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape);
   });
@@ -122,7 +122,7 @@ export default function Minesweeper(props) {
         } else {
           setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape));
         }
-      }, 10);
+      }, interval);
     }
     return () => {
       if (autoplayInterval) {

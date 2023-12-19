@@ -11,6 +11,7 @@ root.render(
       height={15}
       mineCount={25}
       shouldAutoplay={false}
+      interval={100}
       guaranteedSolvable={true}
       shape={'octagon-and-square'}
     />
