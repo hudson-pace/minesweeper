@@ -2,7 +2,7 @@ import autoplay from "./autoplay";
 import squareGridUtils from './squareGridUtils';
 import triangleGridUtils from './triangleGridUtils';
 import hexagonGridUtils from './hexagonGridUtils';
-import octagonAndSquareGridUtils from './ocatgonAndSquareGridUtils';
+import octagonAndSquareGridUtils from './octagonAndSquareGridUtils';
 
 
 const getShapeUtils = (shape) => {
