@@ -12,6 +12,7 @@ export default function Minesweeper(props) {
 
   return (
     <>
+      <h5>Note: This project has largely been replaced by <a href="https://hudson-pace.github.io/shape-editor">this one</a>.</h5>
       <div className="control-panel">
         {
           shapes.map((shape) => {
