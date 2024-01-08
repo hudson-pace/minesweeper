@@ -1,3 +1,6 @@
+body {
+  text-align: center;
+}
 .tile-container {
   display: inline-block;
   background-color: black;
@@ -65,29 +68,29 @@
   transform: scaleY(0.42);
 }
 
-.tile-container.octagon-and-square {
+.tile-container.octagon {
   height: 30px;
   width: 30px;
   margin-left: 30px;
   transform: rotate(45deg);
 }
 
-.row:nth-child(even) .tile-container.octagon-and-square {
+.row:nth-child(even) .tile-container.octagon {
   transform: scale(2);
   clip-path: polygon(33% 0%, 67% 0%, 100% 33%, 100% 67%, 67% 100%, 33% 100%, 0% 67%, 0% 33%);
 }
-.row:nth-child(even) .tile-container.octagon-and-square .tile {
+.row:nth-child(even) .tile-container.octagon .tile {
   clip-path: polygon(33% 0%, 67% 0%, 100% 33%, 100% 67%, 67% 100%, 33% 100%, 0% 67%, 0% 33%);
 }
 
-.row:nth-child(odd) .tile-container.octagon-and-square .tile div {
+.row:nth-child(odd) .tile-container.octagon .tile div {
   transform: rotate(-45deg);
 }
-.row:nth-child(even) .tile-container.octagon-and-square .tile div {
+.row:nth-child(even) .tile-container.octagon .tile div {
   transform: scale(0.5);
 }
 
-.tile-container.octagon-and-square .tile {
+.tile-container.octagon .tile {
   height: 100%;
   width: 100%;
   line-height: 30px;
@@ -133,8 +136,14 @@
 .game-container {
   position: relative;
   display: inline-block;
+  margin-top: 3vh;
+  border: 1px solid black;
+  padding: 3vh;
 }
-
+.info-panel {
+  margin-top: 5vh;
+  border: 1px solid black;
+}
 
 
 .hidden {
@@ -148,6 +157,7 @@
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 10;
 }
 .refresh-button {
   display: inline-block;

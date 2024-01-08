@@ -11,7 +11,7 @@ const getShapeUtils = (shape) => {
       return triangleGridUtils;
     case 'hexagon':
       return hexagonGridUtils;
-    case 'octagon-and-square':
+    case 'octagon':
       return octagonAndSquareGridUtils;
     case 'square':
     default:

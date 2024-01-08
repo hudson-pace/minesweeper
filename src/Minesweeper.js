@@ -1,164 +1,58 @@
-import { useEffect, useState } from "react";
-import autoplay from './autoplay';
-import { countFlagsAroundIndex, getIndexListAroundTile, generateEmptyGrid, GameState, calculateGameState, getRandomTile, initializeGrid, getRows } from "./gridUtils";
-import Tile from './Tile';
+import { useState } from "react";
+import Grid from './Grid';
 
-
-
-
-
-const showTile = (index, grid) => {
-  const tile = {...grid.data[index]};
-  tile.exposed = true;
-  grid.data[index] = tile;
-  if (tile.value === 0) {
-    getIndexListAroundTile(index, grid, 2).forEach((i) => {
-      if (!grid.data[i].exposed && !grid.data[i].flagged) {
-        showTile(i, grid);
-      }
-    });
-  }
-}
-
-const showNeighbors = (index, grid) => {
-  let change = false;
-  getIndexListAroundTile(index, grid, 2).forEach((i) => {
-    if (!grid.data[i].exposed && !grid.data[i].flagged) {
-      change = true;
-      showTile(i, grid);
-    }
-  });
-  return change;
-}
-
-
-
-
-
-const clickOnTile = (e, index, newGrid) => {
-  let change = false;
-  if (!newGrid.initialized) {
-    initializeGrid(newGrid, index, newGrid.guaranteedSolvable);
-    change = true;
-  }
-  if (!newGrid.data[index].exposed && !newGrid.data[index].flagged) {
-    change = true;
-    showTile(index, newGrid);
-  } else if (e.buttons === 2 && newGrid.data[index].exposed && newGrid.data[index].value === countFlagsAroundIndex(index, newGrid)) {
-    change = showNeighbors(index, newGrid) || change;
-  }
-  return change;
-}
-
-const completeTurn = (clickTargets, flagTargets, e, grid, setGrid, flagCount) => {
-  const newGrid = { ...grid }
-  let change = false;
-  clickTargets.forEach((target) => {
-    change = clickOnTile(e, target, newGrid) || change;
-  });
-  flagTargets.forEach((target) => {
-    change = rightClickOnTile(target, newGrid, flagCount) || change;
-  });
-
-  if (change) {
-    setGrid(newGrid);
-  }
-}
-
-const handleClickOnTile = (e, index, grid, setGrid, gameState, flagCount) => {
-  if (gameState === GameState.InProgress) {
-    completeTurn([index], [], e, grid, setGrid, flagCount);
-  }
-}
-
-const rightClickOnTile = (index, grid, flagCount) => {
-  if ((flagCount > 0 || grid.data[index].flagged) && !grid.data[index].exposed) {
-    const tile = {...grid.data[index]};
-    tile.flagged = !tile.flagged;
-    grid.data[index] = tile;
-    return true;
-  }
-  return false;
-}
-const handleRightClickOnTile = (e, index, grid, setGrid, flagCount, gameState) => {
-  e.preventDefault();
-  if (gameState === GameState.InProgress) {
-    completeTurn([], [index], e, grid, setGrid, flagCount);
-  }
-}
-
-const handleRefreshClick = (setGrid, width, height, mineCount, guaranteedSolvable, shape) => {
-  setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape));
-}
+const shapes = ['triangle', 'square', 'hexagon', 'octagon'];
 export default function Minesweeper(props) {
-  const { width, height, mineCount, shouldAutoplay, interval, guaranteedSolvable, shape } = props;
-  const [grid, setGrid] = useState(() => {
-    return generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape);
-  });
+  const [shape, setShape] = useState('triangle');
+  const [size, setSize] = useState(5);
+  const [mineCount, setMineCount] = useState(5);
+  const [shouldAutoplay, setShouldAutoplay] = useState(false);
+  const [interval, setInterval] = useState(100);
+  const [guaranteedSolvable, setGuaranteedSolvable] = useState(false);
 
-  let flagCount = mineCount;
-  grid.data.forEach((tile) => {
-    if (!tile.exposed && tile.flagged) {
-      flagCount--;
-    }
-  });
-
-  const gameState = calculateGameState(grid);
-
-  useEffect(() => {
-    let autoplayInterval;
-    if (shouldAutoplay) {
-      autoplayInterval = setTimeout(() => {
-        
-        if (gameState === GameState.InProgress) {
-          if (!grid.initialized) {
-            completeTurn([getRandomTile(grid)], [], { buttons: 0 }, grid, setGrid, flagCount);
-          } else {
-            const { clickTargets, flagTargets } = autoplay(grid);
-            if (clickTargets.size > 0 || flagTargets.size > 0) {
-              completeTurn(clickTargets, flagTargets, { buttons: 0 }, grid, setGrid, flagCount);
-            }
-          }
-        } else {
-          setGrid(generateEmptyGrid(width, height, mineCount, guaranteedSolvable, shape));
-        }
-      }, interval);
-    }
-    return () => {
-      if (autoplayInterval) {
-        clearInterval(autoplayInterval);
-      }
-    }
-  }, [gameState, grid, flagCount, width, height, mineCount, shouldAutoplay, guaranteedSolvable, shape]);
-
-  const squares = grid.data.map((tile) => {
-    return <Tile
-      value={tile.value}
-      exposed={tile.exposed}
-      flagged={tile.flagged}
-      index={tile.index}
-      key={tile.index}
-      onClick={(e, index) => handleClickOnTile(e, index, grid, setGrid, gameState, flagCount)}
-      onContextMenu={(e, index) => handleRightClickOnTile(e, index, grid, setGrid, flagCount, gameState)}
-      shape={shape}
-    />
-  });
-  const rows = getRows(grid, squares);
   return (
-    <div>
-      <h1>Minesweeper!</h1>
-      <div className="game-container">
-        <div className={`overlay ${gameState === GameState.InProgress ? 'hidden' : ''}`}>
-            <div className='refresh-button' onClick={() => handleRefreshClick(setGrid, width, height, mineCount, guaranteedSolvable, shape)}>refresh</div>
-        </div>
-        {rows}
+    <>
+      <h5>Note: This project has largely been replaced by <a href="https://hudson-pace.github.io/shape-editor">this one</a>.</h5>
+      <div className="control-panel">
+        {
+          shapes.map((shape) => {
+            return (
+              <label key={shape}>
+                <input type="radio" id={`shape-${shape}`} name="shape" value={shape} defaultChecked={shape === 'triangle'} onChange={e => setShape(e.target.value)}></input>{shape}
+              </label>
+            );
+          })
+        }
+        <br />
+        <label>
+          size:<input type="number" id="size" name="size" value={size} min={5} max={20} onChange={e => setSize(parseInt(e.target.value))}></input>
+        </label>
+        <br />
+        <label>
+          mine count:<input type="number" id="mineCount" name="mineCount" value={mineCount} min={1} max={size * size / 2} onChange={e => setMineCount(parseInt(e.target.value))}></input>
+        </label>
+        <br />
+        <label>
+          autoplay:<input type="checkbox" name="shouldAutoplay" value={shouldAutoplay} onChange={e => setShouldAutoplay(e.target.value)}></input>
+        </label>
+        <br />
+        <label>
+          autoplay interval (ms):<input type="number" name="interval" value={interval} min={10} onChange={e => setInterval(parseInt(e.target.value))}></input>
+        </label>
+        <br />
+        <label>
+          always solvable:<input type="checkbox" name="guaranteedSolvable" value={guaranteedSolvable} onChange={e => setGuaranteedSolvable(e.target.value)}></input>
+        </label>
       </div>
-      <div>
-        Flags: {flagCount}
-      </div>
-      <div>
-        Game State: {gameState}
-      </div>
-    </div>
+      <Grid
+        width={shape === 'octagon' ? size * 2 + 1 : size}
+        height={shape === 'octagon' ? size * 2 + 1 : size}
+        mineCount={mineCount}
+        shouldAutoplay={shouldAutoplay}
+        interval={interval}
+        guaranteedSolvable={guaranteedSolvable}
+        shape={shape}
+      />
+    </>
   )
 }
